@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Code Can Do · Water Coding Group</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --abyss:#071820;
+    --deep:#0b2732;
+    --panel:#0e3441;
+    --panel-2:#123f4e;
+    --line:rgba(170,215,225,.14);
+    --teal:#1c8ba0;
+    --cyan:#57c7dd;
+    --surface:#7fe0ea;
+    --algae:#a7d84f;
+    --amber:#e6a94e;
+    --coral:#e8785a;
+    --foam:#eaf7fb;
+    --mist:#9bc0cb;
+    --deepmist:#6f9aa6;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--abyss);
+    color:var(--foam);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:-.01em;line-height:1.15;margin:0}
+  .mono{font-family:'IBM Plex Mono',monospace}
+  a{color:var(--cyan)}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;min-height:78vh;display:flex;align-items:flex-end;overflow:hidden;border-bottom:1px solid var(--line)}
+  #heroWaves{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .hero-grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,24,32,.15) 0%,rgba(7,24,32,.55) 55%,var(--abyss) 100%);pointer-events:none}
+  .hero-inner{position:relative;z-index:2;max-width:1120px;margin:0 auto;width:100%;padding:0 28px 64px}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;color:var(--surface);margin-bottom:18px}
+  .hero h1{font-size:clamp(2.4rem,6vw,4.6rem);font-weight:700;max-width:16ch}
+  .hero h1 em{font-style:normal;color:var(--algae)}
+  .hero p{max-width:56ch;color:var(--mist);font-size:clamp(1rem,1.6vw,1.18rem);margin-top:20px}
+  .depth-scale{position:absolute;right:22px;top:0;bottom:0;z-index:2;display:flex;flex-direction:column;justify-content:space-between;padding:26px 0;font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--deepmist);text-align:right}
+  .depth-scale span{display:block;position:relative;padding-right:14px}
+  .depth-scale span::after{content:"";position:absolute;right:0;top:50%;width:8px;height:1px;background:var(--deepmist)}
+  @media(max-width:640px){.depth-scale{display:none}}
+
+  /* ---------- Layout ---------- */
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+  .lead{padding:64px 0 20px}
+  .lead p{max-width:64ch;color:var(--mist);font-size:1.08rem}
+  .lead strong{color:var(--foam);font-weight:600}
+
+  .module{padding:56px 0;border-top:1px solid var(--line)}
+  .mod-head{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+  .mod-num{font-family:'IBM Plex Mono',monospace;color:var(--teal);font-size:.85rem;font-weight:600}
+  .mod-tag{font-family:'IBM Plex Mono',monospace;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:var(--algae);border:1px solid rgba(167,216,79,.35);padding:3px 9px;border-radius:100px}
+  .module h2{font-size:clamp(1.5rem,3vw,2.1rem);margin:6px 0 10px}
+  .mod-sub{color:var(--mist);max-width:62ch;margin-bottom:26px}
+
+  .panel{background:linear-gradient(180deg,var(--panel) 0%,var(--deep) 100%);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 20px 50px -30px rgba(0,0,0,.8)}
+  .foot-note{font-family:'IBM Plex Mono',monospace;font-size:.74rem;color:var(--deepmist);margin-top:16px}
+  .foot-note b{color:var(--mist);font-weight:500}
+
+  /* ---------- Controls ---------- */
+  .controls{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+  button.pill{font-family:'IBM Plex Mono',monospace;font-size:.78rem;background:transparent;color:var(--mist);border:1px solid var(--line);border-radius:100px;padding:7px 15px;cursor:pointer;transition:.15s}
+  button.pill:hover{border-color:var(--cyan);color:var(--foam)}
+  button.pill.on{background:var(--cyan);color:var(--abyss);border-color:var(--cyan);font-weight:600}
+  button.solid{font-family:'IBM Plex Mono',monospace;font-size:.8rem;background:var(--algae);color:var(--abyss);border:none;border-radius:100px;padding:8px 18px;cursor:pointer;font-weight:600}
+  button.ghost{font-family:'IBM Plex Mono',monospace;font-size:.8rem;background:transparent;color:var(--mist);border:1px solid var(--line);border-radius:100px;padding:8px 18px;cursor:pointer}
+  button.ghost:hover{color:var(--foam);border-color:var(--cyan)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:4px;background:var(--panel-2);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--surface);cursor:pointer;border:3px solid var(--deep)}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--surface);cursor:pointer;border:3px solid var(--deep)}
+  input[type=search]{width:100%;background:var(--deep);border:1px solid var(--line);border-radius:8px;color:var(--foam);padding:9px 12px;font-family:'IBM Plex Mono',monospace;font-size:.85rem}
+  input[type=search]:focus{outline:none;border-color:var(--cyan)}
+
+  /* ---------- Chart ---------- */
+  .chart-box{position:relative;height:340px}
+
+  /* ---------- TSI reactive ---------- */
+  .tsi-grid{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+  @media(max-width:760px){.tsi-grid{grid-template-columns:1fr}}
+  .slider-row{margin-bottom:20px}
+  .slider-row label{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:.8rem;color:var(--mist);margin-bottom:8px}
+  .slider-row label b{color:var(--surface);font-weight:600}
+  .tsi-readout{display:flex;align-items:baseline;gap:12px;margin-top:6px}
+  .tsi-num{font-family:'Space Grotesk',sans-serif;font-size:3.4rem;font-weight:700;line-height:1}
+  .tsi-class{font-family:'IBM Plex Mono',monospace;font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border-radius:100px;font-weight:600}
+  .tsi-breakdown{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:var(--deepmist);margin-top:14px;line-height:1.9}
+  .tsi-breakdown span{color:var(--mist)}
+
+  /* ---------- Map ---------- */
+  #okmap{height:420px;border-radius:12px;border:1px solid var(--line);background:var(--deep)}
+  .leaflet-popup-content-wrapper{background:var(--panel);color:var(--foam);border-radius:10px}
+  .leaflet-popup-content{font-family:'Inter',sans-serif;margin:12px 14px}
+  .leaflet-popup-tip{background:var(--panel)}
+  .pop-title{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:1rem;margin-bottom:4px}
+  .pop-meta{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--mist)}
+
+  /* ---------- Table ---------- */
+  table{width:100%;border-collapse:collapse;font-size:.86rem}
+  thead th{font-family:'IBM Plex Mono',monospace;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;text-align:left;color:var(--deepmist);padding:10px 12px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
+  thead th:hover{color:var(--cyan)}
+  thead th .arr{opacity:.4;font-size:.7rem}
+  tbody td{padding:10px 12px;border-bottom:1px solid rgba(170,215,225,.07);font-family:'IBM Plex Mono',monospace;color:var(--mist)}
+  tbody tr:hover td{background:rgba(87,199,221,.05)}
+  td.exceed{color:var(--amber);font-weight:600}
+  .flag{display:inline-block;font-size:.68rem;padding:2px 7px;border-radius:100px;font-weight:600}
+  .flag.ok{background:rgba(167,216,79,.15);color:var(--algae)}
+  .flag.over{background:rgba(230,169,78,.15);color:var(--amber)}
+  .table-scroll{overflow-x:auto}
+
+  /* ---------- Canvas sims ---------- */
+  .sim-canvas{width:100%;height:320px;display:block;border-radius:12px;background:radial-gradient(120% 120% at 20% 0%,#0f3a49 0%,#08202a 70%);border:1px solid var(--line);cursor:crosshair}
+  .sim-controls{display:flex;flex-wrap:wrap;gap:22px;align-items:center;margin-top:16px}
+  .sim-controls .ctl{min-width:150px}
+  .sim-controls .ctl label{font-family:'IBM Plex Mono',monospace;font-size:.74rem;color:var(--mist);display:block;margin-bottom:6px}
+
+  .ripple-hint{font-family:'IBM Plex Mono',monospace;font-size:.76rem;color:var(--surface);margin-bottom:14px}
+
+  /* ---------- Footer ---------- */
+  footer{border-top:1px solid var(--line);padding:56px 0 80px;margin-top:20px}
+  footer h2{font-size:1.6rem;margin-bottom:14px}
+  footer p{color:var(--mist);max-width:60ch}
+  .stack{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .chip{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--mist);border:1px solid var(--line);border-radius:8px;padding:8px 12px}
+  .chip b{color:var(--surface);font-weight:600}
+
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <canvas id="heroWaves"></canvas>
+  <div class="hero-grad"></div>
+  <div class="depth-scale">
+    <span>0 m</span><span>2 m</span><span>4 m</span><span>6 m</span><span>8 m</span>
+  </div>
+  <div class="hero-inner">
+    <div class="eyebrow">Water Coding Group · Show &amp; Tell</div>
+    <h1>What code can <em>do</em> with our data.</h1>
+    <p>Every panel below is running live in this browser. No server, no install. Right click, view source, and you can read exactly how each one works. The same building blocks power our Shiny apps and dashboards.</p>
+  </div>
+</header>
+
+<!-- ============ LEAD ============ -->
+<section class="wrap lead">
+  <p>We spend a lot of time getting data <strong>clean and correct</strong>. This is the other half: turning it into something a person can read, click, and reason about. Charts, maps, calculators, tables, and simulations are all just code, and most of it is less code than you would think. Scroll through, poke at everything, and steal whatever is useful.</p>
+</section>
+
+<!-- ============ 1. CHARTS ============ -->
+<section class="module wrap">
+  <div class="mod-head">
+    <span class="mod-num">01</span>
+    <span class="mod-tag">Interactive charts</span>
+  </div>
+  <h2>A hydrograph you can talk to</h2>
+  <p class="mod-sub">Static plots answer one question. Interactive ones let the audience ask their own. Toggle parameters on and off, hover for exact values. This is a few lines of Chart.js on a simple data frame.</p>
+  <div class="panel">
+    <div class="controls" id="chartToggles"></div>
+    <div class="chart-box"><canvas id="hydrograph"></canvas></div>
+    <div class="foot-note"><b>Under the hood:</b> one dataset, one canvas element, a JSON options object. In R this is the same idea as plotly or dygraphs inside a Shiny app.</div>
+  </div>
+</section>
+
+<!-- ============ 2. REACTIVE MODEL ============ -->
+<section class="module wrap">
+  <div class="mod-head">
+    <span class="mod-num">02</span>
+    <span class="mod-tag">Reactive inputs</span>
+  </div>
+  <h2>Move a slider, watch the lake change</h2>
+  <p class="mod-sub">This is reactivity, the thing that makes Shiny feel alive. Three inputs feed a Carlson Trophic State Index calculation, and the result redraws the lake and its class instantly. No submit button, no reload.</p>
+  <div class="panel">
+    <div class="tsi-grid">
+      <div>
+        <div class="slider-row">
+          <label>Total phosphorus <b><span id="tpVal">40</span> µg/L</b></label>
+          <input type="range" id="tp" min="4" max="200" value="40" step="1">
+        </div>
+        <div class="slider-row">
+          <label>Chlorophyll-a <b><span id="chlVal">12</span> µg/L</b></label>
+          <input type="range" id="chl" min="0.5" max="120" value="12" step="0.5">
+        </div>
+        <div class="slider-row">
+          <label>Secchi depth <b><span id="sdVal">1.8</span> m</b></label>
+          <input type="range" id="sd" min="0.2" max="7" value="1.8" step="0.1">
+        </div>
+        <div class="tsi-readout">
+          <div class="tsi-num" id="tsiNum">54</div>
+          <div class="tsi-class" id="tsiClass">Eutrophic</div>
+        </div>
+        <div class="tsi-breakdown">
+          TSI(TP) <span id="tsiTP">·</span> &nbsp;·&nbsp; TSI(Chl) <span id="tsiChl">·</span> &nbsp;·&nbsp; TSI(SD) <span id="tsiSD">·</span>
+        </div>
+      </div>
+      <div>
+        <svg id="lakeSvg" viewBox="0 0 400 300" width="100%" style="border-radius:12px;border:1px solid var(--line);display:block"></svg>
+      </div>
+    </div>
+    <div class="foot-note"><b>Under the hood:</b> inputs trigger a recompute, the recompute redraws an SVG. Swap "SVG" for "leaflet map" or "ggplot" and you have described most of the dashboards we build.</div>
+  </div>
+</section>
+
+<!-- ============ 3. MAPS ============ -->
+<section class="module wrap">
+  <div class="mod-head">
+    <span class="mod-num">03</span>
+    <span class="mod-tag">Spatial &amp; maps</span>
+  </div>
+  <h2>Put the stations on a map</h2>
+  <p class="mod-sub">Coordinates in a table are hard to read. On a slippy map they tell a story. Click a marker for its record. Color encodes trophic status. This is Leaflet, the same library behind the GMAP groundwater dashboard.</p>
+  <div class="panel">
+    <div class="controls" id="mapToggles">
+      <button class="pill on" data-status="all">All sites</button>
+      <button class="pill" data-status="Oligotrophic">Oligotrophic</button>
+      <button class="pill" data-status="Mesotrophic">Mesotrophic</button>
+      <button class="pill" data-status="Eutrophic">Eutrophic</button>
+    </div>
+    <div id="okmap"></div>
+    <div class="foot-note"><b>Under the hood:</b> a list of points, a base map, one loop that drops a colored circle per site. Popups are just HTML strings.</div>
+  </div>
+</section>
+
+<!-- ============ 4. TABLES ============ -->
+<section class="module wrap">
+  <div class="mod-head">
+    <span class="mod-num">04</span>
+    <span class="mod-tag">Data &amp; tables</span>
+  </div>
+  <h2>Tables that sort, search, and flag</h2>
+  <p class="mod-sub">A results export does not have to be a wall of numbers. Click any header to sort. Type to filter. Values over the criterion light up on their own. This is the QA reviewer's best friend.</p>
+  <div class="panel">
+    <div style="margin-bottom:14px;max-width:320px">
+      <input type="search" id="tblSearch" placeholder="Filter by station or parameter...">
+    </div>
+    <div class="table-scroll">
+      <table id="wqTable">
+        <thead>
+          <tr>
+            <th data-key="station">Station <span class="arr">↕</span></th>
+            <th data-key="date">Date <span class="arr">↕</span></th>
+            <th data-key="param">Parameter <span class="arr">↕</span></th>
+            <th data-key="result" data-num="1">Result <span class="arr">↕</span></th>
+            <th data-key="unit">Unit <span class="arr">↕</span></th>
+            <th data-key="flag">Status <span class="arr">↕</span></th>
+          </tr>
+        </thead>
+        <tbody id="tblBody"></tbody>
+      </table>
+    </div>
+    <div class="foot-note"><b>Under the hood:</b> sort compares one column, filter hides rows that do not match, the flag is a simple rule per parameter. DT and reactable do this in R with almost no code.</div>
+  </div>
+</section>
+
+<!-- ============ 5. SIMULATION ============ -->
+<section class="module wrap">
+  <div class="mod-head">
+    <span class="mod-num">05</span>
+    <span class="mod-tag">Simulation &amp; animation</span>
+  </div>
+  <h2>A contaminant plume, particle by particle</h2>
+  <p class="mod-sub">Code can also model process, not just display data. Here a source releases particles that drift downstream and spread out, advection plus diffusion. Click anywhere on the water to add a new source. Change the current and mixing and watch the plume respond.</p>
+  <div class="panel">
+    <canvas id="plume" class="sim-canvas"></canvas>
+    <div class="sim-controls">
+      <button class="solid" id="plumePlay">Pause</button>
+      <button class="ghost" id="plumeReset">Reset</button>
+      <div class="ctl">
+        <label>Current speed <span class="mono" id="flowVal">1.0</span></label>
+        <input type="range" id="flow" min="0" max="3" value="1" step="0.1">
+      </div>
+      <div class="ctl">
+        <label>Mixing / diffusion <span class="mono" id="diffVal">1.0</span></label>
+        <input type="range" id="diff" min="0" max="3" value="1" step="0.1">
+      </div>
+    </div>
+    <div class="foot-note"><b>Under the hood:</b> a few hundred particles, each nudged by the current plus a random step every frame. Simple rules, complex-looking result. The same loop drives game engines and weather toys.</div>
+  </div>
+</section>
+
+<!-- ============ 6. PLAYFUL ============ -->
+<section class="module wrap">
+  <div class="mod-head">
+    <span class="mod-num">06</span>
+    <span class="mod-tag">Just because it is fun</span>
+  </div>
+  <h2>Touch the water</h2>
+  <p class="mod-sub">Not everything has to be a deliverable. Code responds to people. Click or drag across the surface and it ripples. Good interfaces feel like this even when the subject is a lab result.</p>
+  <div class="panel">
+    <div class="ripple-hint">↓ click and drag across the water ↓</div>
+    <canvas id="ripple" class="sim-canvas" style="cursor:pointer"></canvas>
+    <div class="foot-note"><b>Under the hood:</b> each click spawns an expanding ring, the animation loop fades them out. Pure event handling and a redraw. This is the whole trick behind interfaces that feel responsive.</div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="wrap">
+  <h2>All of this is the same toolbox</h2>
+  <p>Charts, maps, reactive inputs, tables, and simulations are not six separate skills. They are the same loop: take data, respond to a person, redraw. Learn it once in the browser and it carries straight into Shiny, into R Markdown, into the apps we ship.</p>
+  <div class="stack">
+    <span class="chip"><b>Charts</b> Chart.js · plotly · ggplot</span>
+    <span class="chip"><b>Maps</b> Leaflet · sf · mapview</span>
+    <span class="chip"><b>Reactivity</b> Shiny · observers · JS events</span>
+    <span class="chip"><b>Tables</b> DT · reactable · datatables</span>
+    <span class="chip"><b>Apps</b> Shiny · golem · quarto</span>
+  </div>
+</footer>
+
+<script>
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ================= HERO WAVES ================= */
+(function(){
+  const c = document.getElementById('heroWaves');
+  const ctx = c.getContext('2d');
+  let w,h,dpr;
+  function size(){
+    dpr = Math.min(window.devicePixelRatio||1,2);
+    w = c.clientWidth; h = c.clientHeight;
+    c.width = w*dpr; c.height = h*dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  new ResizeObserver(size).observe(c); size();
+  const layers = [
+    {amp:26, len:0.006, sp:0.018, y:0.42, col:'rgba(28,139,160,.35)'},
+    {amp:20, len:0.010, sp:0.026, y:0.55, col:'rgba(87,199,221,.28)'},
+    {amp:16, len:0.014, sp:0.033, y:0.68, col:'rgba(127,224,234,.20)'},
+    {amp:12, len:0.020, sp:0.045, y:0.80, col:'rgba(167,216,79,.14)'}
+  ];
+  let t=0;
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    const g = ctx.createLinearGradient(0,0,0,h);
+    g.addColorStop(0,'#0c3846'); g.addColorStop(1,'#071820');
+    ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    layers.forEach(l=>{
+      ctx.beginPath();
+      ctx.moveTo(0,h);
+      for(let x=0;x<=w;x+=6){
+        const y = h*l.y + Math.sin(x*l.len + t*l.sp)*l.amp + Math.sin(x*l.len*0.5 + t*l.sp*1.4)*l.amp*0.4;
+        ctx.lineTo(x,y);
+      }
+      ctx.lineTo(w,h); ctx.closePath();
+      ctx.fillStyle=l.col; ctx.fill();
+    });
+    t += 1;
+    if(!reduce) requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ================= 1. HYDROGRAPH ================= */
+(function(){
+  const days = Array.from({length:60},(_,i)=>`Jun ${i+1<=30?i+1:'Jul '+(i-29)}`);
+  function series(base,amp,noise,drift){
+    let v=base; return days.map((_,i)=>{
+      v += drift + (Math.random()-.5)*noise;
+      return +(base + Math.sin(i/6)*amp + (v-base)*0.3).toFixed(2);
+    });
+  }
+  const data = {
+    'Water temp (°C)': {vals:series(24,4,1.2,0.02), color:'#e8785a'},
+    'Dissolved O₂ (mg/L)': {vals:series(8,1.5,0.4,-0.01), color:'#57c7dd'},
+    'Chlorophyll (µg/L)': {vals:series(18,10,2,0.15), color:'#a7d84f'},
+    'Turbidity (NTU)': {vals:series(12,6,3,0.05), color:'#e6a94e'}
+  };
+  const active = new Set(Object.keys(data));
+  const ctx = document.getElementById('hydrograph').getContext('2d');
+  Chart.defaults.color = '#9bc0cb';
+  Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+  const chart = new Chart(ctx,{
+    type:'line',
+    data:{labels:days, datasets:build()},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#0e3441',borderColor:'rgba(170,215,225,.2)',borderWidth:1,padding:12,titleColor:'#eaf7fb'}},
+      scales:{
+        x:{grid:{color:'rgba(170,215,225,.06)'},ticks:{maxTicksLimit:8,maxRotation:0}},
+        y:{grid:{color:'rgba(170,215,225,.06)'}}
+      },
+      elements:{point:{radius:0,hoverRadius:5},line:{tension:.35,borderWidth:2}}
+    }
+  });
+  function build(){
+    return Object.entries(data).filter(([k])=>active.has(k)).map(([k,v])=>({
+      label:k, data:v.vals, borderColor:v.color,
+      backgroundColor:v.color+'22', fill:false
+    }));
+  }
+  const box = document.getElementById('chartToggles');
+  Object.entries(data).forEach(([k,v])=>{
+    const b = document.createElement('button');
+    b.className='pill on'; b.textContent=k;
+    b.style.borderColor=v.color+'88';
+    b.onclick=()=>{
+      if(active.has(k)){active.delete(k);b.classList.remove('on');}
+      else{active.add(k);b.classList.add('on');}
+      chart.data.datasets=build(); chart.update();
+    };
+    box.appendChild(b);
+  });
+})();
+
+/* ================= 2. TSI REACTIVE ================= */
+(function(){
+  const tp=document.getElementById('tp'), chl=document.getElementById('chl'), sd=document.getElementById('sd');
+  const tpVal=document.getElementById('tpVal'), chlVal=document.getElementById('chlVal'), sdVal=document.getElementById('sdVal');
+  const num=document.getElementById('tsiNum'), cls=document.getElementById('tsiClass');
+  const bTP=document.getElementById('tsiTP'), bChl=document.getElementById('tsiChl'), bSD=document.getElementById('tsiSD');
+  const svg=document.getElementById('lakeSvg');
+
+  function classify(t){
+    if(t<40) return {name:'Oligotrophic', col:'#57c7dd', water:'#2f6f86'};
+    if(t<50) return {name:'Mesotrophic', col:'#a7d84f', water:'#3f7d66'};
+    if(t<70) return {name:'Eutrophic', col:'#e6a94e', water:'#5a7a3a'};
+    return {name:'Hypereutrophic', col:'#e8785a', water:'#6f7a2a'};
+  }
+  function draw(){
+    const TP=+tp.value, CHL=+chl.value, SD=+sd.value;
+    tpVal.textContent=TP; chlVal.textContent=CHL; sdVal.textContent=SD.toFixed(1);
+    const tsiTP = 14.42*Math.log(TP)+4.15;
+    const tsiChl = 9.81*Math.log(CHL)+30.6;
+    const tsiSD = 60 - 14.41*Math.log(SD);
+    const avg = (tsiTP+tsiChl+tsiSD)/3;
+    const c = classify(avg);
+    num.textContent = Math.round(avg);
+    num.style.color = c.col;
+    cls.textContent = c.name;
+    cls.style.background = c.col+'22'; cls.style.color = c.col;
+    bTP.textContent=Math.round(tsiTP); bChl.textContent=Math.round(tsiChl); bSD.textContent=Math.round(tsiSD);
+
+    // clarity: map Secchi (0.2..7) to a light depth 0..1
+    const clarity = Math.min(SD/7,1);
+    const surfaceY = 70;
+    const bottomY = 275;
+    const secchiY = surfaceY + (bottomY-surfaceY)*(1-clarity);
+    svg.innerHTML = `
+      <defs>
+        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#123f4e"/><stop offset="1" stop-color="#0e3441"/>
+        </linearGradient>
+        <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${c.water}" stop-opacity="0.55"/>
+          <stop offset="1" stop-color="${c.water}" stop-opacity="0.95"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="400" height="${surfaceY}" fill="url(#sky)"/>
+      <path d="M0,${bottomY} L0,${surfaceY} ${wave(surfaceY)} L400,${bottomY} Z" fill="url(#water)"/>
+      <path d="M0,${bottomY} Q100,${bottomY+18} 200,${bottomY-6} T400,${bottomY} L400,300 L0,300 Z" fill="#3a2c1e"/>
+      <line x1="24" y1="${secchiY}" x2="376" y2="${secchiY}" stroke="#eaf7fb" stroke-dasharray="4 5" stroke-width="1.5" opacity="0.7"/>
+      <circle cx="40" cy="${secchiY}" r="7" fill="#eaf7fb" opacity="0.85"/>
+      <text x="54" y="${secchiY-8}" fill="#eaf7fb" font-family="IBM Plex Mono" font-size="11" opacity="0.8">Secchi ${SD.toFixed(1)} m</text>
+      ${algae(avg)}
+      <text x="16" y="${surfaceY-14}" fill="#9bc0cb" font-family="IBM Plex Mono" font-size="11">surface</text>
+    `;
+  }
+  function wave(y){
+    let p=''; for(let x=0;x<=400;x+=20){ p+=`L${x},${y+Math.sin(x/24)*3} `; } return p;
+  }
+  function algae(t){
+    const n = Math.round(Math.max(0,(t-42))/4);
+    let s='';
+    for(let i=0;i<n && i<40;i++){
+      const x=20+Math.random()*360, y=80+Math.random()*180, r=1+Math.random()*3;
+      s+=`<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" fill="#a7d84f" opacity="${(0.25+Math.random()*0.4).toFixed(2)}"/>`;
+    }
+    return s;
+  }
+  [tp,chl,sd].forEach(s=>s.addEventListener('input',draw));
+  draw();
+})();
+
+/* ================= 3. LEAFLET MAP ================= */
+(function(){
+  const sites = [
+    {name:'Boomer Lake', lat:36.1470, lng:-97.0664, tsi:58, status:'Eutrophic', county:'Payne'},
+    {name:'Lake Thunderbird', lat:35.2278, lng:-97.2400, tsi:63, status:'Eutrophic', county:'Cleveland'},
+    {name:'Grand Lake', lat:36.5600, lng:-94.9200, tsi:47, status:'Mesotrophic', county:'Delaware'},
+    {name:'Lake Texoma', lat:33.9500, lng:-96.6000, tsi:44, status:'Mesotrophic', county:'Marshall'},
+    {name:'Fort Gibson Lake', lat:35.8700, lng:-95.2300, tsi:49, status:'Mesotrophic', county:'Wagoner'},
+    {name:'Lake Stilwell', lat:35.8300, lng:-94.6200, tsi:55, status:'Eutrophic', county:'Adair'},
+    {name:'Lake Hefner', lat:35.5500, lng:-97.5900, tsi:52, status:'Eutrophic', county:'Oklahoma'},
+    {name:'Broken Bow Lake', lat:34.1400, lng:-94.6900, tsi:33, status:'Oligotrophic', county:'McCurtain'},
+    {name:'Sardis Lake', lat:34.6300, lng:-95.3500, tsi:38, status:'Oligotrophic', county:'Pushmataha'},
+    {name:'Lake Eufaula', lat:35.3000, lng:-95.6000, tsi:51, status:'Eutrophic', county:'McIntosh'}
+  ];
+  const colors = {Oligotrophic:'#57c7dd', Mesotrophic:'#a7d84f', Eutrophic:'#e6a94e'};
+  const map = L.map('okmap',{scrollWheelZoom:false}).setView([35.4,-96.4],6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; OpenStreetMap &copy; CARTO', maxZoom:12
+  }).addTo(map);
+  let markers=[];
+  function render(filter){
+    markers.forEach(m=>map.removeLayer(m)); markers=[];
+    sites.filter(s=>filter==='all'||s.status===filter).forEach(s=>{
+      const m = L.circleMarker([s.lat,s.lng],{
+        radius:9, color:colors[s.status], fillColor:colors[s.status],
+        fillOpacity:.75, weight:2
+      }).addTo(map);
+      m.bindPopup(`<div class="pop-title">${s.name}</div>
+        <div class="pop-meta">${s.county} County<br>TSI ${s.tsi} · ${s.status}</div>`);
+      markers.push(m);
+    });
+  }
+  render('all');
+  document.querySelectorAll('#mapToggles .pill').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('#mapToggles .pill').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); render(b.dataset.status);
+    };
+  });
+})();
+
+/* ================= 4. TABLE ================= */
+(function(){
+  const criteria = {'Total Phosphorus':50,'Chlorophyll-a':10,'Dissolved Oxygen':6,'pH':9,'Nitrate':10,'Turbidity':25};
+  const stations = ['LK-0114','LK-0227','ST-0093','ST-0146','LK-0331','ST-0208'];
+  const params = Object.keys(criteria);
+  const units = {'Total Phosphorus':'µg/L','Chlorophyll-a':'µg/L','Dissolved Oxygen':'mg/L','pH':'SU','Nitrate':'mg/L','Turbidity':'NTU'};
+  let rows=[];
+  for(let i=0;i<24;i++){
+    const p = params[i%params.length];
+    const crit = criteria[p];
+    const result = +( (crit*0.4) + Math.random()*crit*1.3 ).toFixed(2);
+    const d = new Date(2025,4+Math.floor(Math.random()*3),1+Math.floor(Math.random()*27));
+    rows.push({
+      station: stations[Math.floor(Math.random()*stations.length)],
+      date: d.toISOString().slice(0,10),
+      param: p,
+      result,
+      unit: units[p],
+      exceed: p==='Dissolved Oxygen' ? result<crit : result>crit
+    });
+  }
+  const body = document.getElementById('tblBody');
+  let sortKey='date', sortDir=1;
+  function draw(){
+    const q = document.getElementById('tblSearch').value.toLowerCase();
+    let view = rows.filter(r=>
+      r.station.toLowerCase().includes(q)||r.param.toLowerCase().includes(q));
+    view.sort((a,b)=>{
+      let x=a[sortKey], y=b[sortKey];
+      if(typeof x==='number') return (x-y)*sortDir;
+      return (''+x).localeCompare(''+y)*sortDir;
+    });
+    body.innerHTML = view.map(r=>`
+      <tr>
+        <td>${r.station}</td>
+        <td>${r.date}</td>
+        <td>${r.param}</td>
+        <td class="${r.exceed?'exceed':''}">${r.result}</td>
+        <td>${r.unit}</td>
+        <td>${r.exceed?'<span class="flag over">exceeds</span>':'<span class="flag ok">ok</span>'}</td>
+      </tr>`).join('');
+  }
+  document.querySelectorAll('#wqTable thead th').forEach(th=>{
+    th.onclick=()=>{
+      const k=th.dataset.key;
+      if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=1;}
+      draw();
+    };
+  });
+  document.getElementById('tblSearch').addEventListener('input',draw);
+  draw();
+})();
+
+/* ================= 5. PLUME SIM ================= */
+(function(){
+  const c=document.getElementById('plume'), ctx=c.getContext('2d');
+  let w,h,dpr;
+  function size(){
+    dpr=Math.min(window.devicePixelRatio||1,2);
+    w=c.clientWidth; h=c.clientHeight;
+    c.width=w*dpr; c.height=h*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  new ResizeObserver(size).observe(c); size();
+  let sources=[{x:0.12,y:0.5}];
+  let parts=[];
+  let flow=1, diff=1, running=true;
+  function spawn(){
+    sources.forEach(s=>{
+      for(let i=0;i<2;i++){
+        parts.push({x:s.x*w, y:s.y*h, age:0, life:120+Math.random()*80,
+          vy:(Math.random()-.5)*0.4});
+      }
+    });
+  }
+  function step(){
+    if(running){
+      spawn();
+      for(let i=parts.length-1;i>=0;i--){
+        const p=parts[i];
+        p.x += flow*1.6 + (Math.random()-.5)*diff*1.2;
+        p.y += p.vy + (Math.random()-.5)*diff*2.2;
+        p.age++;
+        if(p.age>p.life || p.x>w+10) parts.splice(i,1);
+      }
+      if(parts.length>1400) parts.splice(0,parts.length-1400);
+    }
+    ctx.clearRect(0,0,w,h);
+    for(const p of parts){
+      const t=p.age/p.life;
+      const r=2+t*10;
+      const a=(1-t)*0.5;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,r,0,6.283);
+      ctx.fillStyle=`rgba(${Math.round(167-t*80)},${Math.round(216-t*40)},${Math.round(79+t*140)},${a})`;
+      ctx.fill();
+    }
+    sources.forEach(s=>{
+      ctx.beginPath(); ctx.arc(s.x*w,s.y*h,5,0,6.283);
+      ctx.fillStyle='#e8785a'; ctx.fill();
+    });
+    if(!reduce) requestAnimationFrame(step);
+  }
+  c.addEventListener('click',e=>{
+    const rect=c.getBoundingClientRect();
+    sources.push({x:(e.clientX-rect.left)/w, y:(e.clientY-rect.top)/h});
+    if(sources.length>5) sources.shift();
+  });
+  document.getElementById('flow').addEventListener('input',e=>{
+    flow=+e.target.value; document.getElementById('flowVal').textContent=flow.toFixed(1);
+  });
+  document.getElementById('diff').addEventListener('input',e=>{
+    diff=+e.target.value; document.getElementById('diffVal').textContent=diff.toFixed(1);
+  });
+  document.getElementById('plumePlay').onclick=(e)=>{
+    running=!running; e.target.textContent=running?'Pause':'Play';
+  };
+  document.getElementById('plumeReset').onclick=()=>{
+    parts=[]; sources=[{x:0.12,y:0.5}];
+  };
+  step();
+  if(reduce){ for(let k=0;k<300;k++) step(); running=false; document.getElementById('plumePlay').textContent='Play'; }
+})();
+
+/* ================= 6. RIPPLE ================= */
+(function(){
+  const c=document.getElementById('ripple'), ctx=c.getContext('2d');
+  let w,h,dpr;
+  function size(){
+    dpr=Math.min(window.devicePixelRatio||1,2);
+    w=c.clientWidth; h=c.clientHeight;
+    c.width=w*dpr; c.height=h*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  new ResizeObserver(size).observe(c); size();
+  let rings=[];
+  function add(x,y){ rings.push({x,y,r:2,max:60+Math.random()*80}); }
+  function loop(){
+    ctx.clearRect(0,0,w,h);
+    for(let i=rings.length-1;i>=0;i--){
+      const g=rings[i]; g.r+=2.2;
+      const a=1-(g.r/g.max);
+      if(a<=0){ rings.splice(i,1); continue; }
+      ctx.beginPath(); ctx.arc(g.x,g.y,g.r,0,6.283);
+      ctx.strokeStyle=`rgba(127,224,234,${a*0.8})`; ctx.lineWidth=2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(g.x,g.y,g.r*0.6,0,6.283);
+      ctx.strokeStyle=`rgba(167,216,79,${a*0.4})`; ctx.lineWidth=1.5; ctx.stroke();
+    }
+    requestAnimationFrame(loop);
+  }
+  let down=false;
+  function pos(e){ const r=c.getBoundingClientRect();
+    return [(e.touches?e.touches[0].clientX:e.clientX)-r.left,(e.touches?e.touches[0].clientY:e.clientY)-r.top]; }
+  c.addEventListener('mousedown',e=>{down=true; add(...pos(e));});
+  c.addEventListener('mousemove',e=>{ if(down) add(...pos(e)); });
+  window.addEventListener('mouseup',()=>down=false);
+  c.addEventListener('touchstart',e=>{e.preventDefault();add(...pos(e));},{passive:false});
+  c.addEventListener('touchmove',e=>{e.preventDefault();add(...pos(e));},{passive:false});
+  add(w*0.5,h*0.5);
+  loop();
+})();
+</script>
+</body>
+</html>
